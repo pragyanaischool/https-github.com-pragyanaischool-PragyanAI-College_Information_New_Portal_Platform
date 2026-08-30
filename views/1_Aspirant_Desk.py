@@ -126,7 +126,7 @@ def render_aspirant_desk():
     session = SessionLocal()
     try:
         # -------------------------------------------------------------------------
-        # TAB 1: Step 1 - Multi-Test Score & Rank Profiler (Type-Safe Enhanced)
+        # TAB 1: Step 1 - Multi-Test Score & Rank Profiler (Type-Safe & Chroma-Safe)
         # -------------------------------------------------------------------------
         with tab_step1:
             st.session_state.aspirant_journey_step = 1
@@ -206,25 +206,27 @@ def render_aspirant_desk():
                     parent_email = st.text_input("Parent Email Address", value="ramesh.sharma@gmail.com")
 
                 st.markdown("---")
-                submitted_profile = st.form_submit_button("💾 Save Profile to SQL & Ingest into ChromaDB", type="primary", use_container_width=True)
+                submitted_profile = st.form_submit_button("💾 Save Profile to SQL & Ingest into ChromaDB", type="primary", width='stretch')
 
                 if submitted_profile:
                     try:
-                        # Safe type conversion and fallback string assignment to completely prevent NoneType encode errors
+                        # Strict type casting to eliminate NoneType encode / attribute errors
                         safe_s_name = str(student_name or "Rahul Sharma")
                         safe_s_email = str(student_email or "aspirant@pragyanai.com")
                         safe_s_phone = str(student_phone or "9845012345")
                         safe_p_name = str(parent_name or "Ramesh Sharma")
+                        safe_branch = str(preferred_branch or "CSE")
                         safe_rank = int(kcet_rank or 2500)
                         safe_ctc = float(min_median_ctc or 8.5)
                         safe_budget = float(max_tuition_budget or 12.0)
                         safe_dream = float(target_dream_ctc or 35.0)
+                        safe_city = ", ".join(preferred_city) if preferred_city else "Bengaluru"
 
                         lead = AdmissionLead(
                             student_name=f"{safe_s_name} (Parent: {safe_p_name})",
                             email=safe_s_email,
                             phone=safe_s_phone,
-                            target_branch=str(preferred_branch),
+                            target_branch=safe_branch,
                             entrance_exam="KCET / COMEDK / JEE",
                             score_rank=safe_rank,
                             intent_score=safe_ctc
@@ -233,14 +235,14 @@ def render_aspirant_desk():
                         session.commit()
 
                         vector_service = VectorStoreService()
-                        profile_summary = (
+                        profile_summary = str(
                             f"Student: {safe_s_name}, Parent: {safe_p_name}, Phone: {safe_s_phone}, Email: {safe_s_email}, "
                             f"KCET Rank: {safe_rank}, COMEDK Rank: {comedk_rank}, JEE Percentile: {jee_percentile}, "
-                            f"Branch: {preferred_branch}, Quota: {admission_quota}, Budget: {safe_budget}LPA, "
-                            f"Target CTC: {safe_dream}LPA, Location: {preferred_city}"
+                            f"Branch: {safe_branch}, Quota: {admission_quota}, Budget: {safe_budget}LPA, "
+                            f"Target CTC: {safe_dream}LPA, Location: {safe_city}"
                         )
                         vector_service.add_document(
-                            doc_id=f"profile_{safe_s_email}",
+                            doc_id=f"profile_{safe_s_email.replace('@', '_at_')}",
                             text=profile_summary,
                             metadata={"source": "candidate_profile", "user": safe_s_email}
                         )
@@ -276,7 +278,7 @@ def render_aspirant_desk():
 
             col_nav_1, col_nav_2 = st.columns([6, 1])
             with col_nav_2:
-                if st.button("Next: View Match & ROI ➡️", key="btn_next_step2"):
+                if st.button("Next: View Match & ROI ➡️", key="btn_next_step2", width='stretch'):
                     st.session_state.aspirant_journey_step = 2
                     st.rerun()
 
@@ -294,15 +296,15 @@ def render_aspirant_desk():
             st.markdown("<br/>", unsafe_allow_html=True)
             st.markdown("#### 📊 Institutional 4-Year Salary ROI Benchmarking")
             fig_roi = AnalyticsService.get_placement_trend_chart(session)
-            st.plotly_chart(fig_roi, use_container_width=True)
+            st.plotly_chart(fig_roi, width='stretch')
 
             col_nav_prev, col_nav_next = st.columns([1, 1])
             with col_nav_prev:
-                if st.button("⬅️ Back to Step 1 (Scores)", key="btn_back_to_1"):
+                if st.button("⬅️ Back to Step 1 (Scores)", key="btn_back_to_1", width='stretch'):
                     st.session_state.aspirant_journey_step = 1
                     st.rerun()
             with col_nav_next:
-                if st.button("Next: Compare Side-by-Side ➡️", key="btn_next_step3"):
+                if st.button("Next: Compare Side-by-Side ➡️", key="btn_next_step3", width='stretch'):
                     st.session_state.aspirant_journey_step = 3
                     st.rerun()
 
@@ -333,11 +335,11 @@ def render_aspirant_desk():
 
             col_nav_prev3, col_nav_next3 = st.columns([1, 1])
             with col_nav_prev3:
-                if st.button("⬅️ Back to Step 2 (Recommendations)", key="btn_back_to_2"):
+                if st.button("⬅️ Back to Step 2 (Recommendations)", key="btn_back_to_2", width='stretch'):
                     st.session_state.aspirant_journey_step = 2
                     st.rerun()
             with col_nav_next3:
-                if st.button("Next: Official Portals & PDFs ➡️", key="btn_next_step4"):
+                if st.button("Next: Official Portals & PDFs ➡️", key="btn_next_step4", width='stretch'):
                     st.session_state.aspirant_journey_step = 4
                     st.rerun()
 
@@ -365,7 +367,7 @@ def render_aspirant_desk():
                             data=f_brochure.read(),
                             file_name="Management_Fee_Structure_2026.pdf",
                             mime="application/pdf",
-                            use_container_width=True,
+                            width='stretch',
                         )
                 else:
                     st.caption("Management quota fee flyer publication ready for download upon ingestion.")
@@ -377,7 +379,7 @@ def render_aspirant_desk():
                             data=f_roi.read(),
                             file_name="Placement_ROI_Report_2026.pdf",
                             mime="application/pdf",
-                            use_container_width=True,
+                            width='stretch',
                         )
 
                 st.info(
@@ -391,11 +393,11 @@ def render_aspirant_desk():
 
             col_nav_prev4, col_nav_next4 = st.columns([1, 1])
             with col_nav_prev4:
-                if st.button("⬅️ Back to Step 3 (Comparison)", key="btn_back_to_3"):
+                if st.button("⬅️ Back to Step 3 (Comparison)", key="btn_back_to_3", width='stretch'):
                     st.session_state.aspirant_journey_step = 3
                     st.rerun()
             with col_nav_next4:
-                if st.button("Next: Stakeholder Voices ➡️", key="btn_next_step5"):
+                if st.button("Next: Stakeholder Voices ➡️", key="btn_next_step5", width='stretch'):
                     st.session_state.aspirant_journey_step = 5
                     st.rerun()
 
@@ -413,11 +415,11 @@ def render_aspirant_desk():
 
             col_nav_prev5, col_nav_next5 = st.columns([1, 1])
             with col_nav_prev5:
-                if st.button("⬅️ Back to Step 4 (Portals)", key="btn_back_to_4"):
+                if st.button("⬅️ Back to Step 4 (Portals)", key="btn_back_to_4", width='stretch'):
                     st.session_state.aspirant_journey_step = 4
                     st.rerun()
             with col_nav_next5:
-                if st.button("Next: Knowledge Bank ➡️", key="btn_next_step6"):
+                if st.button("Next: Knowledge Bank ➡️", key="btn_next_step6", width='stretch'):
                     st.session_state.aspirant_journey_step = 6
                     st.rerun()
 
@@ -450,11 +452,11 @@ def render_aspirant_desk():
 
             col_nav_prev6, col_nav_next6 = st.columns([1, 1])
             with col_nav_prev6:
-                if st.button("⬅️ Back to Step 5 (Voices)", key="btn_back_to_5"):
+                if st.button("⬅️ Back to Step 5 (Voices)", key="btn_back_to_5", width='stretch'):
                     st.session_state.aspirant_journey_step = 5
                     st.rerun()
             with col_nav_next6:
-                if st.button("Next: Student Vision & AI ➡️", key="btn_next_step7"):
+                if st.button("Next: Student Vision & AI ➡️", key="btn_next_step7", width='stretch'):
                     st.session_state.aspirant_journey_step = 7
                     st.rerun()
 
@@ -481,7 +483,7 @@ def render_aspirant_desk():
 
             col_nav_prev7, _ = st.columns([1, 1])
             with col_nav_prev7:
-                if st.button("⬅️ Back to Step 6 (Knowledge Bank)", key="btn_back_to_6"):
+                if st.button("⬅️ Back to Step 6 (Knowledge Bank)", key="btn_back_to_6", width='stretch'):
                     st.session_state.aspirant_journey_step = 6
                     st.rerun()
 
@@ -530,7 +532,7 @@ def render_aspirant_desk():
                 submit_inquiry = st.form_submit_button(
                     "🚀 Submit Inquiry & Request Direct Callback",
                     type="primary",
-                    use_container_width=True,
+                    width='stretch',
                 )
 
                 if submit_inquiry:
@@ -577,7 +579,7 @@ def render_aspirant_desk():
                 key="aspirant_chat_input"
             )
 
-            if st.button("🚀 Send to AI Assistant", type="primary"):
+            if st.button("🚀 Send to AI Assistant", type="primary", width='stretch'):
                 if user_prompt and user_prompt != "-- Select a sample question --":
                     with st.spinner("⚡ Synthesizing response via Groq LPU & LangGraph Agentic RAG..."):
                         response = RAGService.query_knowledge_base(session, user_prompt, "Aspirant & Parent Portal")
