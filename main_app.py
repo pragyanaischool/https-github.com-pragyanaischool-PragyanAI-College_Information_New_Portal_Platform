@@ -1,4 +1,5 @@
 import importlib
+import os
 import streamlit as st
 from config.settings import ensure_directories
 from config.styles import load_custom_css
@@ -36,21 +37,21 @@ finally:
 # 4. Load Custom Enterprise CSS Styles
 load_custom_css()
 
-# 5. Render RBAC Authentication Sidebar & Retrieve Active Role
+# 5. Global Logo Integration in Sidebar (Appears on Every Page)
+logo_path = "assets/PragyanAI_Transperent.png"
+if os.path.exists(logo_path):
+    st.sidebar.image(logo_path, use_container_width=True)
+else:
+    st.sidebar.title("🚀 PragyanAI Hub")
+
+st.sidebar.markdown("---")
+
+# 6. Render RBAC Authentication Sidebar & Retrieve Active Role
 active_role = render_auth_sidebar()
 
-# 6. Main View Routing Engine
+# 7. Main View Routing Engine
 st.sidebar.markdown("---")
 st.sidebar.markdown("### Workspace Navigation")
-
-# Role-based default mapping or manual selection
-view_options = {
-    "Student / Parent (Aspirant)": "1. Aspirant Desk",
-    "Engineering College Management": "2. College Management",
-    "Corporate Recruiter / HR": "3. Recruiter Hub",
-    "High School / PU Partner": "4. School Partner",
-    "Administrator / Leadership": "5. Admin Governance"
-}
 
 navigation_choice = st.sidebar.radio(
     "Select Portal View",
@@ -68,12 +69,11 @@ st.sidebar.markdown("---")
 st.sidebar.markdown("### PragyanAI Ecosystem")
 st.sidebar.caption("v4.2.0 Enterprise | Powered by Groq, LangGraph & ChromaDB Agentic RAG")
 
-# 7. Route to respective view module based on user selection with role enforcement
+# 8. Route to respective view module based on user selection with role enforcement
 if "1. Aspirant" in navigation_choice:
     aspirant_desk.render_aspirant_desk()
 
 elif "2. College Management" in navigation_choice:
-    # Enforce role check for administrative/management views
     if active_role not in ["college_management", "admin"]:
         st.warning("🔒 **Restricted Access:** Please switch your session role in the sidebar to 'Engineering College Management' or 'Administrator' to unlock this workspace.")
     else:
