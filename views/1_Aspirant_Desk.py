@@ -132,7 +132,7 @@ def render_aspirant_desk():
             st.session_state.aspirant_journey_step = 1
             
             st.markdown("### 📝 Step 1: Candidate Multi-Test Profiler & Admission Preferences")
-            st.markdown("Provide your entrance scores and target criteria below. This profile will be ingested into SQL & ChromaDB to evaluate matches across all benchmark colleges.")
+            st.markdown("Provide your entrance scores, budget targets, and personal contact details below. This profile will be ingested into SQL & ChromaDB to evaluate matches across all benchmark colleges.")
 
             with st.form("step1_profiler_enhanced_form"):
                 st.markdown("#### 🎓 1. Entrance Test Scores & Academic Credentials")
@@ -150,13 +150,10 @@ def render_aspirant_desk():
                     
                 with col_s3:
                     boards_pct = st.number_input("12th / PUC PCM Aggregate (%):", min_value=0.0, max_value=100.0, value=92.0)
-                    candidate_name = st.text_input("Candidate Full Name:", value="Rahul Sharma")
-                    candidate_email = st.text_input("Candidate Email:", value="aspirant@pragyanai.com")
-
-                preferred_branch = st.selectbox(
-                    "Preferred Branch:",
-                    ["Computer Science & Engineering (CSE)", "Artificial Intelligence & Machine Learning (AI-ML)", "Information Science (ISE)", "Electronics & Communication (ECE)", "Mechanical Engineering (MECH)"]
-                )
+                    preferred_branch = st.selectbox(
+                        "Preferred Branch:",
+                        ["Computer Science & Engineering (CSE)", "Artificial Intelligence & Machine Learning (AI-ML)", "Information Science (ISE)", "Electronics & Communication (ECE)", "Mechanical Engineering (MECH)"]
+                    )
 
                 st.markdown("---")
                 st.markdown("#### 🏛️ 2. Institutional Type, City & Seat Quota Pathway")
@@ -195,22 +192,38 @@ def render_aspirant_desk():
                     target_dream_ctc = st.slider("Target Dream Placement Package (₹ LPA):", min_value=15.0, max_value=70.0, value=35.0, step=1.0)
 
                 st.markdown("---")
+                st.markdown("#### 👤 4. Student & Parent Contact Details")
+                col_p1, col_p2 = st.columns(2)
+                
+                with col_p1:
+                    student_name = st.text_input("Student Full Name *", value="Rahul Sharma")
+                    student_phone = st.text_input("Student Mobile / WhatsApp *", value="+91 98450 12345")
+                    student_email = st.text_input("Student Email Address *", value="rahul.sharma@student.edu")
+                    
+                with col_p2:
+                    parent_name = st.text_input("Parent / Guardian Name *", value="Ramesh Sharma")
+                    parent_phone = st.text_input("Parent Mobile Number *", value="+91 98450 54321")
+                    parent_email = st.text_input("Parent Email Address", value="ramesh.sharma@gmail.com")
+
+                st.markdown("---")
                 submitted_profile = st.form_submit_button("💾 Save Profile to SQL & Ingest into ChromaDB", type="primary", use_container_width=True)
 
                 if submitted_profile:
                     try:
-                        # Safe type conversion to prevent NoneType encode / attribute errors
-                        safe_name = str(candidate_name or "Rahul Sharma")
-                        safe_email = str(candidate_email or "aspirant@pragyanai.com")
+                        # Safe type conversion and fallback string assignment to completely prevent NoneType encode errors
+                        safe_s_name = str(student_name or "Rahul Sharma")
+                        safe_s_email = str(student_email or "aspirant@pragyanai.com")
+                        safe_s_phone = str(student_phone or "9845012345")
+                        safe_p_name = str(parent_name or "Ramesh Sharma")
                         safe_rank = int(kcet_rank or 2500)
                         safe_ctc = float(min_median_ctc or 8.5)
                         safe_budget = float(max_tuition_budget or 12.0)
                         safe_dream = float(target_dream_ctc or 35.0)
 
                         lead = AdmissionLead(
-                            student_name=safe_name,
-                            email=safe_email,
-                            phone="9845012345",
+                            student_name=f"{safe_s_name} (Parent: {safe_p_name})",
+                            email=safe_s_email,
+                            phone=safe_s_phone,
                             target_branch=str(preferred_branch),
                             entrance_exam="KCET / COMEDK / JEE",
                             score_rank=safe_rank,
@@ -221,17 +234,18 @@ def render_aspirant_desk():
 
                         vector_service = VectorStoreService()
                         profile_summary = (
-                            f"Candidate: {safe_name}, KCET Rank: {safe_rank}, COMEDK Rank: {comedk_rank}, "
-                            f"JEE Percentile: {jee_percentile}, Branch: {preferred_branch}, Quota: {admission_quota}, "
-                            f"Budget: {safe_budget}LPA, Target CTC: {safe_dream}LPA, Location: {preferred_city}"
+                            f"Student: {safe_s_name}, Parent: {safe_p_name}, Phone: {safe_s_phone}, Email: {safe_s_email}, "
+                            f"KCET Rank: {safe_rank}, COMEDK Rank: {comedk_rank}, JEE Percentile: {jee_percentile}, "
+                            f"Branch: {preferred_branch}, Quota: {admission_quota}, Budget: {safe_budget}LPA, "
+                            f"Target CTC: {safe_dream}LPA, Location: {preferred_city}"
                         )
                         vector_service.add_document(
-                            doc_id=f"profile_{safe_email}",
+                            doc_id=f"profile_{safe_s_email}",
                             text=profile_summary,
-                            metadata={"source": "candidate_profile", "user": safe_email}
+                            metadata={"source": "candidate_profile", "user": safe_s_email}
                         )
 
-                        st.success("🎉 Profile successfully saved to database & embedded into ChromaDB Vector Store! You can now proceed to Step 2.")
+                        st.success("🎉 Profile and parent contact details successfully saved to database & embedded into ChromaDB Vector Store! You can now proceed to Step 2.")
                     except Exception as e:
                         st.error(f"Error saving profile: {e}")
 
