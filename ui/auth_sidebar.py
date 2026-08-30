@@ -6,7 +6,8 @@ from database.models import User
 def render_auth_sidebar(session: Session) -> tuple:
     """
     Renders secure authentication sidebar supporting user login and account signup,
-    persisting credentials and roles securely in the SQLite database.
+    persisting credentials and roles securely in the SQLite database and displaying 
+    convenient test credentials for immediate evaluation.
     
     Args:
         session (Session): Active SQLAlchemy database session
@@ -25,6 +26,17 @@ def render_auth_sidebar(session: Session) -> tuple:
     # 2. Render Login or User Session Status
     if not st.session_state.authenticated:
         st.sidebar.markdown("### 🔐 PragyanAI Authentication Hub")
+        
+        # Display Visible Test Credentials for Quick Testing
+        with st.sidebar.expander("📌 Quick Test Credentials", expanded=True):
+            st.markdown("""
+                **Student/Aspirant:** `aspirant1` / `password123`  
+                **College Admin:** `college_admin` / `password123`  
+                **Recruiter:** `recruiter_hr` / `password123`  
+                **School Partner:** `school_principal` / `password123`  
+                **Admin:** `admin` / `admin123`
+            """)
+
         auth_tab1, auth_tab2 = st.sidebar.tabs(["🔑 Login", "📝 Create Account"])
 
         with auth_tab1:
