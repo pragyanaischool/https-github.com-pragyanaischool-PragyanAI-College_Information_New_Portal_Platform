@@ -48,11 +48,15 @@ class VectorStoreService:
             return
             
         embedding = self._model.encode(text).tolist()
+        
+        # Ensure metadata is passed as a list matching the batch inputs
+        meta_entry = metadata or {"source": "uploaded_document"}
+        
         self._collection.upsert(
             ids=[doc_id],
             embeddings=[embedding],
             documents=[text],
-            metadatas=[metadata or {"source": "uploaded_document"}]
+            metadatas=[meta_entry]
         )
 
     def similarity_search(self, query: str, n_results: int = 3) -> list:
