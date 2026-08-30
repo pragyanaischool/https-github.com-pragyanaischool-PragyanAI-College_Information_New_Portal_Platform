@@ -7,6 +7,8 @@ def load_custom_css():
     """
     st.markdown("""
         <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
         /* Global app background and font settings */
         .stApp {
             background-color: #f8fafc;
