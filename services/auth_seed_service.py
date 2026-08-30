@@ -8,11 +8,12 @@ from database.models import (
 
 def seed_users_and_demo_data(session: Session):
     """
-    Safely seeds default user authentication credentials and demo data 
-    without causing unique constraint violations on application reloads.
+    Safely seeds default user authentication credentials and comprehensive demo data 
+    across all stakeholder modules into the SQLite database on initial boot.
+    Prevents uniqueness collision errors using existence checks.
     """
     
-    # 1. Seed Default Secure Users safely using check-before-insert logic
+    # 1. Seed Default Secure Users (Hashing passwords with SHA-256)
     default_users = [
         User(
             username="aspirant1", 
@@ -52,8 +53,8 @@ def seed_users_and_demo_data(session: Session):
     ]
 
     for u in default_users:
-        existing = session.query(User).filter_by(username=u.username).first()
-        if not existing:
+        existing_user = session.query(User).filter_by(username=u.username).first()
+        if not existing_user:
             session.add(u)
     session.commit()
 
