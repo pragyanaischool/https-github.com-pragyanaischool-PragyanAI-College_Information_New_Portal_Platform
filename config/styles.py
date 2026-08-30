@@ -3,8 +3,8 @@ import streamlit as st
 def load_custom_css():
     """
     Injects custom enterprise CSS styling into the Streamlit app session 
-    to guarantee high-contrast visible typography and clear visibility/colors 
-    for file upload drop boxes.
+    to guarantee high-contrast visible typography, background styling, 
+    and clear sidebar text visibility.
     """
     st.markdown("""
         <style>
@@ -25,8 +25,8 @@ def load_custom_css():
 
         /* Explicitly style file uploader / drop box container & text visibility */
         [data-testid="stFileUploader"] {
-            background-color: #0f172a !important; /* Dark container for stark contrast */
-            border: 2px dashed #eab308 !important; /* Bright yellow border */
+            background-color: #0f172a !important;
+            border: 2px dashed #eab308 !important;
             border-radius: 10px;
             padding: 20px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -36,21 +36,43 @@ def load_custom_css():
             background-color: #0f172a !important;
         }
 
-        /* Force file uploader text, instructions, and file names to be bright yellow / red */
         [data-testid="stFileUploader"] section div,
         [data-testid="stFileUploader"] span,
         [data-testid="stFileUploader"] label,
         [data-testid="stFileUploader"] small {
-            color: #facc15 !important; /* Bright Yellow text for high visibility */
+            color: #facc15 !important;
             font-weight: 600 !important;
         }
 
-        /* Browse files button inside uploader */
         [data-testid="stFileUploader"] button {
-            background-color: #ef4444 !important; /* Red action button */
+            background-color: #ef4444 !important;
             color: #ffffff !important;
             font-weight: 700 !important;
             border: none !important;
+        }
+        
+        /* Sidebar container styling & forcing all internal text visible */
+        section[data-testid="stSidebar"] {
+            background-color: #0f172a !important;
+            color: #ffffff !important;
+        }
+        
+        section[data-testid="stSidebar"] .stMarkdown, 
+        section[data-testid="stSidebar"] label,
+        section[data-testid="stSidebar"] .stRadio div,
+        section[data-testid="stSidebar"] .stSelectbox p,
+        section[data-testid="stSidebar"] span,
+        section[data-testid="stSidebar"] p,
+        section[data-testid="stSidebar"] div,
+        section[data-testid="stSidebar"] small,
+        section[data-testid="stSidebar"] caption {
+            color: #f1f5f9 !important;
+        }
+
+        /* Sidebar radio item text specifically */
+        section[data-testid="stSidebar"] div[role="radiogroup"] label p {
+            color: #ffffff !important;
+            font-weight: 500 !important;
         }
         
         /* Custom metric cards styling */
@@ -69,19 +91,6 @@ def load_custom_css():
         div[data-testid="stMetric"] div[data-testid="stMetricValue"] {
             color: #0f172a !important;
             font-weight: 700 !important;
-        }
-        
-        /* Sidebar custom appearance */
-        section[data-testid="stSidebar"] {
-            background-color: #0f172a !important;
-            color: #ffffff !important;
-        }
-        
-        section[data-testid="stSidebar"] .stMarkdown, 
-        section[data-testid="stSidebar"] label,
-        section[data-testid="stSidebar"] .stSelectbox p,
-        section[data-testid="stSidebar"] span {
-            color: #f1f5f9 !important;
         }
         
         /* Expander styling */
