@@ -3,8 +3,8 @@ import streamlit as st
 def load_custom_css():
     """
     Injects custom enterprise CSS styling into the Streamlit app session 
-    to guarantee high-contrast visible typography, background styling, 
-    and clear visibility for file upload drop zones.
+    to guarantee high-contrast visible typography and clear visibility/colors 
+    for file upload drop boxes.
     """
     st.markdown("""
         <style>
@@ -23,21 +23,34 @@ def load_custom_css():
             font-family: 'Inter', sans-serif;
         }
 
-        /* Explicitly fix file uploader / drop box visibility */
+        /* Explicitly style file uploader / drop box container & text visibility */
         [data-testid="stFileUploader"] {
-            background-color: #ffffff !important;
-            border: 2px dashed #cbd5e1 !important;
+            background-color: #0f172a !important; /* Dark container for stark contrast */
+            border: 2px dashed #eab308 !important; /* Bright yellow border */
             border-radius: 10px;
             padding: 20px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
         
         [data-testid="stFileUploader"] section {
-            background-color: #ffffff !important;
+            background-color: #0f172a !important;
         }
 
-        [data-testid="stFileUploader"] section div {
-            color: #334155 !important;
+        /* Force file uploader text, instructions, and file names to be bright yellow / red */
+        [data-testid="stFileUploader"] section div,
+        [data-testid="stFileUploader"] span,
+        [data-testid="stFileUploader"] label,
+        [data-testid="stFileUploader"] small {
+            color: #facc15 !important; /* Bright Yellow text for high visibility */
+            font-weight: 600 !important;
+        }
+
+        /* Browse files button inside uploader */
+        [data-testid="stFileUploader"] button {
+            background-color: #ef4444 !important; /* Red action button */
+            color: #ffffff !important;
+            font-weight: 700 !important;
+            border: none !important;
         }
         
         /* Custom metric cards styling */
