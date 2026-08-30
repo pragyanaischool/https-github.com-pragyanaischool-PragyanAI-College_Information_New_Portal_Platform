@@ -8,51 +8,54 @@ from database.models import (
 
 def seed_users_and_demo_data(session: Session):
     """
-    Seeds default user authentication credentials and comprehensive demo data 
-    across all stakeholder modules into the SQLite database on initial boot.
+    Safely seeds default user authentication credentials and demo data 
+    without causing unique constraint violations on application reloads.
     """
     
-    # 1. Seed Default Secure Users (Hashing passwords with SHA-256)
-    if session.query(User.id).count() == 0:
-        default_users = [
-            User(
-                username="aspirant1", 
-                password_hash=hashlib.sha256("password123".encode()).hexdigest(), 
-                role="aspirant", 
-                full_name="Rahul Sharma (Student/Parent)", 
-                email="aspirant@pragyanai.com"
-            ),
-            User(
-                username="college_admin", 
-                password_hash=hashlib.sha256("password123".encode()).hexdigest(), 
-                role="college_management", 
-                full_name="Dr. V. K. Rao (College Dean)", 
-                email="dean@college.edu"
-            ),
-            User(
-                username="recruiter_hr", 
-                password_hash=hashlib.sha256("password123".encode()).hexdigest(), 
-                role="recruiter", 
-                full_name="Ananya Desai (Talent Head)", 
-                email="hr@techcorp.com"
-            ),
-            User(
-                username="school_principal", 
-                password_hash=hashlib.sha256("password123".encode()).hexdigest(), 
-                role="school_partner", 
-                full_name="Suresh Hebbar (PU Principal)", 
-                email="principal@school.edu"
-            ),
-            User(
-                username="admin", 
-                password_hash=hashlib.sha256("admin123".encode()).hexdigest(), 
-                role="admin", 
-                full_name="Sateesh Ambesange (System Admin)", 
-                email="admin@pragyanai.com"
-            )
-        ]
-        session.add_all(default_users)
-        session.commit()
+    # 1. Seed Default Secure Users safely using check-before-insert logic
+    default_users = [
+        User(
+            username="aspirant1", 
+            password_hash=hashlib.sha256("password123".encode()).hexdigest(), 
+            role="aspirant", 
+            full_name="Rahul Sharma (Student/Parent)", 
+            email="aspirant@pragyanai.com"
+        ),
+        User(
+            username="college_admin", 
+            password_hash=hashlib.sha256("password123".encode()).hexdigest(), 
+            role="college_management", 
+            full_name="Dr. V. K. Rao (College Dean)", 
+            email="dean@college.edu"
+        ),
+        User(
+            username="recruiter_hr", 
+            password_hash=hashlib.sha256("password123".encode()).hexdigest(), 
+            role="recruiter", 
+            full_name="Ananya Desai (Talent Head)", 
+            email="hr@techcorp.com"
+        ),
+        User(
+            username="school_principal", 
+            password_hash=hashlib.sha256("password123".encode()).hexdigest(), 
+            role="school_partner", 
+            full_name="Suresh Hebbar (PU Principal)", 
+            email="principal@school.edu"
+        ),
+        User(
+            username="admin", 
+            password_hash=hashlib.sha256("admin123".encode()).hexdigest(), 
+            role="admin", 
+            full_name="Sateesh Ambesange (System Admin)", 
+            email="admin@pragyanai.com"
+        )
+    ]
+
+    for u in default_users:
+        existing = session.query(User).filter_by(username=u.username).first()
+        if not existing:
+            session.add(u)
+    session.commit()
 
     # 2. Seed Rich Institutional & College Data
     if session.query(College.id).count() == 0:
