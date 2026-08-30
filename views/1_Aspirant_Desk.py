@@ -126,7 +126,7 @@ def render_aspirant_desk():
     session = SessionLocal()
     try:
         # -------------------------------------------------------------------------
-        # TAB 1: Step 1 - Multi-Test Score & Rank Profiler (Enhanced)
+        # TAB 1: Step 1 - Multi-Test Score & Rank Profiler (Type-Safe Enhanced)
         # -------------------------------------------------------------------------
         with tab_step1:
             st.session_state.aspirant_journey_step = 1
@@ -199,28 +199,36 @@ def render_aspirant_desk():
 
                 if submitted_profile:
                     try:
+                        # Safe type conversion to prevent NoneType encode / attribute errors
+                        safe_name = str(candidate_name or "Rahul Sharma")
+                        safe_email = str(candidate_email or "aspirant@pragyanai.com")
+                        safe_rank = int(kcet_rank or 2500)
+                        safe_ctc = float(min_median_ctc or 8.5)
+                        safe_budget = float(max_tuition_budget or 12.0)
+                        safe_dream = float(target_dream_ctc or 35.0)
+
                         lead = AdmissionLead(
-                            student_name=candidate_name,
-                            email=candidate_email,
+                            student_name=safe_name,
+                            email=safe_email,
                             phone="9845012345",
-                            target_branch=preferred_branch,
+                            target_branch=str(preferred_branch),
                             entrance_exam="KCET / COMEDK / JEE",
-                            score_rank=int(kcet_rank),
-                            intent_score=float(min_median_ctc)
+                            score_rank=safe_rank,
+                            intent_score=safe_ctc
                         )
                         session.add(lead)
                         session.commit()
 
                         vector_service = VectorStoreService()
                         profile_summary = (
-                            f"Candidate: {candidate_name}, KCET Rank: {kcet_rank}, COMEDK Rank: {comedk_rank}, "
+                            f"Candidate: {safe_name}, KCET Rank: {safe_rank}, COMEDK Rank: {comedk_rank}, "
                             f"JEE Percentile: {jee_percentile}, Branch: {preferred_branch}, Quota: {admission_quota}, "
-                            f"Budget: {max_tuition_budget}LPA, Target CTC: {target_dream_ctc}LPA, Location: {preferred_city}"
+                            f"Budget: {safe_budget}LPA, Target CTC: {safe_dream}LPA, Location: {preferred_city}"
                         )
                         vector_service.add_document(
-                            doc_id=f"profile_{candidate_email}",
+                            doc_id=f"profile_{safe_email}",
                             text=profile_summary,
-                            metadata={"source": "candidate_profile", "user": candidate_email}
+                            metadata={"source": "candidate_profile", "user": safe_email}
                         )
 
                         st.success("🎉 Profile successfully saved to database & embedded into ChromaDB Vector Store! You can now proceed to Step 2.")
@@ -539,7 +547,6 @@ def render_aspirant_desk():
             st.markdown("### 🤖 Groq + LangGraph AI Guide & RAG Chatbot")
             st.markdown("Ask any question about cutoffs, placements, scholarships, or fee structures, or click a sample question below to begin:")
 
-            # Preset Sample Questions for Aspirant
             sample_questions = [
                 "What is the average placement CTC for Computer Science at PES University?",
                 "Which colleges accept COMEDK rank 1500 for AI & Machine Learning?",
