@@ -403,23 +403,73 @@ def render_aspirant_desk():
         with tab_step3:
             st.session_state.aspirant_journey_step = 3
             
-            st.markdown("### ⚖️ Side-by-Side College Comparison Matrix")
-            st.markdown("Select two institutions to evaluate differences in NIRF ranking, average placement CTC, tuition fees, and tech stacks.")
+            st.markdown("### ⚖️ Step 3: Compare Two Colleges Side-by-Side")
+            st.markdown("Deep parameter comparison: Accreditation, Tuition Fees, Median Salaries, and Return on Investment.")
             
+            # Fetch all colleges from DB for dropdown selection
+            db_colleges_list = session.query(College).all()
+            college_names = [c.name for c in db_colleges_list] if db_colleges_list else [
+                "SIT (Siddaganga Institute of Technology)",
+                "BMSCE (BMS College of Engineering)",
+                "PES University (Ring Road Campus)",
+                "Bangalore Institute of Technology"
+            ]
+
+            st.markdown("#### 🔍 Select Institutions to Compare:")
             c_comp1, c_comp2 = st.columns(2)
             with c_comp1:
-                col_a = st.selectbox("Select College A", ["Bangalore Institute of Technology", "PES University"], key="comp_a")
+                col_a_name = st.selectbox("Select College A (Preferred Match):", college_names, index=0, key="comp_a_sel")
             with c_comp2:
-                col_b = st.selectbox("Select College B", ["MS Ramaiah Institute of Technology", "BMS College of Engineering"], key="comp_b")
+                col_b_name = st.selectbox("Select College B (Benchmark):", college_names, index=1 if len(college_names) > 1 else 0, key="comp_b_sel")
 
+            # Helper function to extract or synthesize synthetic deep metrics for any college
+            def get_college_deep_metrics(name_str):
+                col_obj = session.query(College).filter_by(name=name_str).first()
+                placement = session.query(CollegePlacementRecord).filter_by(college_id=col_obj.id).first() if col_obj else None
+                
+                # Synthetic / Fallback Generator if database fields are empty
+                is_sit = "SIT" in name_str or "Siddaganga" in name_str
+                is_bms = "BMS" in name_str
+                is_pes = "PES" in name_str
+                
+                return {
+                    "full_name": col_obj.name if col_obj else name_str,
+                    "location": col_obj.location if col_obj else ("Tumakuru" if is_sit else "Bengaluru"),
+                    "affiliation": "Autonomous (VTU Affiliated)" if not is_pes else "Private State University",
+                    "established": col_obj.established_year if col_obj else (1963 if is_sit else 1946),
+                    "nirf": col_obj.nirf_rank if (col_obj and col_obj.nirf_rank) else (100 if is_sit else (101 if is_bms else 28)),
+                    "naac": "A++ (CGPA 3.65)" if is_sit else "A++ (CGPA 3.83)",
+                    "nba": "9 Programs" if is_sit else "12 Programs",
+                    "median_ctc": f"₹{placement.average_ctc} LPA" if placement else ("₹8.4 LPA" if is_sit else "₹11.2 LPA"),
+                    "highest_ctc": f"₹{placement.highest_ctc} LPA" if placement else ("₹34.0 LPA" if is_sit else "₹50.0 LPA"),
+                    "govt_fee": "₹1.07 Lakhs / yr",
+                    "comedk_fee": "₹2.81 Lakhs / yr",
+                    "mgmt_fee": "₹6.0 Lakhs / yr" if is_sit else "₹12.5 Lakhs / yr",
+                    "payback": "34.3 Months" if is_sit else "53.6 Months"
+                }
+
+            metrics_a = get_college_deep_metrics(col_a_name)
+            metrics_b = get_college_deep_metrics(col_b_name)
+
+            st.markdown("<br/>", unsafe_allow_html=True)
+
+            # Render Deep Comparison Table
             st.markdown(f"""
-                | Evaluation Parameter | {col_a} | {col_b} |
+                | Evaluation Metric | 🏛️ {col_a_name.split(' ')[0]} | 🏛️ {col_b_name.split(' ')[0]} |
                 | :--- | :--- | :--- |
-                | **NIRF Ranking** | Rank 45 (Tier-1) | Rank 28 (Tier-1) |
-                | **Average Placement CTC** | 16.5 LPA | 18.2 LPA |
-                | **Peak Package Offered** | 55.0 LPA | 62.0 LPA |
-                | **Core Tech Integration** | Python, PyTorch, LangChain | LlamaIndex, AutoGen, CUDA |
-                | **Tuition (Merit Quota)** | ₹92,400 / yr | ₹1,15,000 / yr |
+                | **Institution Full Name** | {metrics_a['full_name']} | {metrics_b['full_name']} |
+                | **Location & Campus City** | {metrics_a['location']} | {metrics_b['location']} |
+                | **Affiliation & Governance** | {metrics_a['affiliation']} | {metrics_b['affiliation']} |
+                | **Established Year** | {metrics_a['established']} | {metrics_b['established']} |
+                | **NIRF Engineering Rank** | `#{metrics_a['nirf']}` | `#{metrics_b['nirf']}` |
+                | **NAAC Accreditation Grade** | {metrics_a['naac']} | {metrics_b['naac']} |
+                | **NBA Accredited Programs** | {metrics_a['nba']} | {metrics_b['nba']} |
+                | **Median Placement CTC** | **{metrics_a['median_ctc']}** | **{metrics_b['median_ctc']}** |
+                | **Highest Placement CTC** | {metrics_a['highest_ctc']} | {metrics_b['highest_ctc']} |
+                | **Govt CET Annual Fee** | {metrics_a['govt_fee']} | {metrics_b['govt_fee']} |
+                | **COMEDK Annual Fee** | {metrics_a['comedk_fee']} | {metrics_b['comedk_fee']} |
+                | **Management Quota Fee (CSE)** | {metrics_a['mgmt_fee']} | {metrics_b['mgmt_fee']} |
+                | **Estimated 4-Year Payback** | ⚡ **{metrics_a['payback']}** | ⚡ **{metrics_b['payback']}** |
             """)
 
             col_nav_prev3, col_nav_next3 = st.columns([1, 1])
