@@ -4,7 +4,7 @@ import streamlit as st
 from config.settings import ensure_directories
 from config.styles import load_custom_css
 from database.session import SessionLocal, init_db
-from services.seed_service import run_database_seed
+from services.auth_seed_service import seed_users_and_demo_data
 from ui.auth_sidebar import render_auth_sidebar
 
 # Dynamically import view modules to safely handle numeric and emoji filenames
@@ -27,35 +27,61 @@ st.set_page_config(
 ensure_directories()
 init_db()
 
-# 3. Boot Automatic Synthetic Database Seeding on First Launch
+# 3. Boot Automatic DB Seeding (Users, Colleges, Students, Companies & Telemetry)
 session = SessionLocal()
 try:
-    run_database_seed(session)
+    seed_users_and_demo_data(session)
 finally:
     session.close()
 
-# 4. Load Custom Enterprise CSS Styles
+# 4. Load Custom Enterprise CSS Styles & High-Contrast Typography
 load_custom_css()
 
-# 5. Global Logo Integration in Sidebar (Appears on Every Page)
+# 5. Global PragyanAI Logo Integration in Sidebar
 logo_path = "assets/PragyanAI_Transperent.png"
 if os.path.exists(logo_path):
     st.sidebar.image(logo_path, use_container_width=True)
 else:
-    st.sidebar.title("🚀 PragyanAI Hub")
+    st.sidebar.title(" PragyanAI Hub")
 
 st.sidebar.markdown("---")
 
-# 6. Render RBAC Authentication Sidebar & Retrieve Active Role
-active_role = render_auth_sidebar()
+# 6. Render Authentication Sidebar & Retrieve Active Role & Username
+session = SessionLocal()
+active_role, username = render_auth_sidebar(session)
+session.close()
 
-# 7. Main View Routing Engine
+# 7. Main Navigation & Workspace Enforcement Based on Logged-in User Role
 st.sidebar.markdown("---")
-st.sidebar.markdown("### Workspace Navigation")
+st.sidebar.markdown("###  Role-Based Workspace")
 
-navigation_choice = st.sidebar.radio(
-    "Select Portal View",
-    [
+if not active_role:
+    st.markdown("""
+        ##  Welcome to the PragyanAI College Intelligence Platform
+        
+        **Grow with Gyan** — Empowering educational institutions, students, recruiters, and academic partners with advanced **Groq, LangGraph, and ChromaDB Agentic RAG** technology.
+        
+        👉 **Please log in or create an account using the sidebar to unlock your customized workspace:**
+        -  **Student / Parent (Aspirant) Desk:** Explore cutoff ranks, placement metrics, and ask the AI Assistant.
+        -  **Engineering College Management:** Manage intake, add students, and track deep analytics.
+        -  **Corporate Recruiter Hub:** Benchmark campuses, review verified talent stacks, and post drives.
+        -  **High School / Partner Portal:** Request K-12 AI/Robotics workshops and view articulation programs.
+        -  **System Administrator:** Oversee complete multi-tenant governance and database entities.
+    """)
+    st.stop()
+
+# Build navigation options filtered strictly by user role permissions
+allowed_views = []
+if active_role == "aspirant":
+    allowed_views = ["1. Aspirant & Parent Desk"]
+elif active_role == "college_management":
+    allowed_views = ["2. College Management", "6. Data Ingestion Portal"]
+elif active_role == "recruiter":
+    allowed_views = ["3. Recruiter Hub", "6. Data Ingestion Portal"]
+elif active_role == "school_partner":
+    allowed_views = ["4. School Partner"]
+elif active_role == "admin":
+    allowed_views = [
         "1. Aspirant & Parent Desk",
         "2. College Management",
         "3. Recruiter Hub",
@@ -63,39 +89,27 @@ navigation_choice = st.sidebar.radio(
         "5. Admin & Governance",
         "6. Data Ingestion Portal"
     ]
-)
+
+navigation_choice = st.sidebar.radio("Select Authorized Workspace", allowed_views)
 
 st.sidebar.markdown("---")
-st.sidebar.markdown("### PragyanAI Ecosystem")
-st.sidebar.caption("v4.2.0 Enterprise | Powered by Groq, LangGraph & ChromaDB Agentic RAG")
+st.sidebar.markdown("###  PragyanAI Ecosystem")
+st.sidebar.caption("v4.5.0 Enterprise | Powered by Groq, LangGraph & ChromaDB")
 
-# 8. Route to respective view module based on user selection with role enforcement
-if "1. Aspirant" in navigation_choice:
-    aspirant_desk.render_aspirant_desk()
-
-elif "2. College Management" in navigation_choice:
-    if active_role not in ["college_management", "admin"]:
-        st.warning("🔒 **Restricted Access:** Please switch your session role in the sidebar to 'Engineering College Management' or 'Administrator' to unlock this workspace.")
-    else:
+# 8. Route to Respective View Module Based on Authorized Selection
+session = SessionLocal()
+try:
+    if "1. Aspirant" in navigation_choice:
+        aspirant_desk.render_aspirant_desk()
+    elif "2. College Management" in navigation_choice:
         college_management.render_college_management_view()
-
-elif "3. Recruiter Hub" in navigation_choice:
-    if active_role not in ["recruiter", "admin"]:
-        st.warning("🔒 **Restricted Access:** Please switch your session role in the sidebar to 'Corporate Recruiter / HR' to unlock this workspace.")
-    else:
+    elif "3. Recruiter Hub" in navigation_choice:
         recruiter_hub.render_recruiter_hub()
-
-elif "4. School Partner" in navigation_choice:
-    if active_role not in ["school_partner", "admin"]:
-        st.warning("🔒 **Restricted Access:** Please switch your session role in the sidebar to 'High School / PU Partner' to unlock this workspace.")
-    else:
+    elif "4. School Partner" in navigation_choice:
         school_partner.render_school_partner_view()
-
-elif "5. Admin & Governance" in navigation_choice:
-    if active_role != "admin":
-        st.error("🔒 **Access Denied:** Administrator credentials required to access system governance and master CRUD controls.")
-    else:
+    elif "5. Admin & Governance" in navigation_choice:
         admin_governance.render_admin_governance_view()
-
-elif "6. Data Ingestion" in navigation_choice:
-    data_ingestion.render_data_ingestion_view()
+    elif "6. Data Ingestion" in navigation_choice:
+        data_ingestion.render_data_ingestion_view()
+finally:
+    session.close()
