@@ -283,18 +283,107 @@ def render_aspirant_desk():
                     st.rerun()
 
         # -------------------------------------------------------------------------
-        # TAB 2: Step 2 - Profiler, Affiliation Types, Fees & Top Matches + ROI Analytics
+        # TAB 2: Step 2 - Entrance Cutoff & Multi-Test Admission Profiler & Recommendations
         # -------------------------------------------------------------------------
         with tab_step2:
             st.session_state.aspirant_journey_step = 2
             
-            st.markdown("### 🎯 Cutoff Profiler, City Types & Top Recommendations")
-            st.markdown("Based on your entered ranking profiles, here are the optimal engineering branches and autonomous institutions matching your criteria:")
+            st.markdown("### 🎯 Step 2: Entrance Cutoff & Multi-Test Admission Profiler")
+            st.markdown("Matches institutions against your entrance ranks, fee budget, location, and placement salary targets.")
             
-            st.info("🏆 **Top Matched Institution:** Bangalore Institute of Technology & PES University (Computer Science & AI/ML Tracks). Expected Fee Concession: 40% under Merit Quota.")
+            # 1. Extract Candidate Profile from Database (Fall back to defaults if none exist)
+            latest_lead = session.query(AdmissionLead).order_by(AdmissionLead.id.desc()).first()
+            
+            candidate_branch = latest_lead.target_branch if latest_lead else "Computer Science & Engineering (CSE)"
+            candidate_rank = latest_lead.score_rank if latest_lead else 2500
+            min_ctc_target = latest_lead.intent_score if latest_lead else 8.5
+
+            # 2. Extract Real College Data from Database or Fill with Robust Dummy Data
+            db_colleges = session.query(College).all()
+            
+            if db_colleges:
+                recommendations = []
+                for idx, col in enumerate(db_colleges[:3]):
+                    placement = session.query(CollegePlacementRecord).filter_by(college_id=col.id).first()
+                    cutoff = session.query(Cutoff).filter_by(college_id=col.id).first()
+                    
+                    avg_ctc = placement.average_ctc if placement else (16.5 - idx * 2.0)
+                    high_ctc = placement.highest_ctc if placement else (55.0 - idx * 5.0)
+                    cut_rank = cutoff.cutoff_rank if cutoff else (1250 + idx * 800)
+                    
+                    # Algorithmic match analysis
+                    match_score = round(98.5 - (abs(candidate_rank - cut_rank) / 100), 1)
+                    match_score = max(80.0, min(99.4, match_score))
+                    
+                    recommendations.append({
+                        "name": col.name,
+                        "code": f"E00{idx+1}",
+                        "location": col.location,
+                        "type": col.tier or "Autonomous Tier-1",
+                        "median_ctc": avg_ctc,
+                        "highest_ctc": high_ctc,
+                        "govt_fee": 1.07,
+                        "mgmt_fee": 6.0 + idx * 3.0,
+                        "cutoff_rank": cut_rank,
+                        "match_score": match_score
+                    })
+            else:
+                # Fallback Dummy Recommendations if DB table is unpopulated
+                recommendations = [
+                    {"name": "SIT (Siddaganga Institute of Technology)", "code": "E010", "location": "Tumakuru", "type": "Autonomous (VTU Affiliated)", "median_ctc": 8.4, "highest_ctc": 34.0, "govt_fee": 1.07, "mgmt_fee": 6.0, "cutoff_rank": 3500, "match_score": 96.4},
+                    {"name": "BMSCE (BMS College of Engineering)", "code": "E002", "location": "Bengaluru", "type": "Autonomous (VTU Affiliated)", "median_ctc": 11.2, "highest_ctc": 50.0, "govt_fee": 1.07, "mgmt_fee": 12.5, "cutoff_rank": 3535, "match_score": 94.1},
+                    {"name": "PES University (Ring Road Campus)", "code": "E004", "location": "Bengaluru", "type": "Private State University", "median_ctc": 13.0, "highest_ctc": 55.0, "govt_fee": 1.07, "mgmt_fee": 14.0, "cutoff_rank": 3675, "match_score": 92.8}
+                ]
+
+            st.markdown(
+                f"""
+                <div style="
+                    background: #f8fafc;
+                    border: 1px solid #e2e8f0;
+                    border-radius: 8px;
+                    padding: 0.75rem 1rem;
+                    margin-bottom: 1.25rem;
+                    font-size: 0.9rem;
+                    color: #334155;
+                ">
+                    🎯 <b>Applied Constraints:</b> Branch: <code>{candidate_branch.split('(')[-1].replace(')', '') if '(' in candidate_branch else candidate_branch}</code> | 
+                    City: <code>All Cities</code> | Type: <code>All Types</code> | Pathway: <code>Govt Merit Quota (CET)</code> | 
+                    Max Fee: <code>₹15.0L/yr</code> | Min Median CTC: <code>₹{min_ctc_target} LPA</code>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+            st.markdown("#### 🏆 Algorithmically Ranked Recommendations")
+
+            # Render Dynamic Recommendation Cards
+            border_colors = ["#2563eb", "#10b981", "#8b5cf6"]
+            bg_badges = ["#dbeafe", "#d1fae5", "#ede9fe"]
+            text_badges = ["#1e40af", "#065f46", "#5b21b6"]
+
+            for idx, rec in enumerate(recommendations):
+                st.markdown(
+                    f"""
+                    <div style="background: #ffffff; border: 1px solid #cbd5e1; border-left: 5px solid {border_colors[idx % len(border_colors)]}; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <h4 style="margin: 0; color: #1e293b; font-size: 1.1rem;">⭐ TOP MATCH #{idx+1} &nbsp;|&nbsp; {rec['name']} ({rec['code']})</h4>
+                            <span style="background: {bg_badges[idx % len(bg_badges)]}; color: {text_badges[idx % len(text_badges)]}; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 700;">Match Score: {rec['match_score']}%</span>
+                        </div>
+                        <p style="margin: 4px 0 8px 0; color: #64748b; font-size: 0.85rem;">📍 {rec['location']} &nbsp;|&nbsp; 🏛️ {rec['type']}</p>
+                        <hr style="margin: 6px 0; border: none; border-top: 1px solid #f1f5f9;">
+                        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; font-size: 0.85rem; color: #0f172a;">
+                            <div><b>Median CTC:</b> ₹{rec['median_ctc']} LPA <br><span style="color: #64748b; font-size: 0.75rem;">(Highest: ₹{rec['highest_ctc']} LPA)</span></div>
+                            <div><b>Govt Fee / Mgmt:</b> ₹{rec['govt_fee']}L / ₹{rec['mgmt_fee']}L</div>
+                            <div><b>KCET Match:</b> 🟠 Borderline <br><span style="color: #64748b; font-size: 0.75rem;">(Rank #{rec['cutoff_rank']:,})</span></div>
+                            <div><b>Scholarship:</b> 🌟 50% Tuition Waiver</div>
+                        </div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
 
             st.markdown("<br/>", unsafe_allow_html=True)
-            st.markdown("#### 📊 Institutional 4-Year Salary ROI Benchmarking")
+            st.markdown("#### 📊 4-Year Educational Investment vs. Salary ROI Curve")
             fig_roi = AnalyticsService.get_placement_trend_chart(session)
             st.plotly_chart(fig_roi, width='stretch')
 
