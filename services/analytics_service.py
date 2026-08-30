@@ -59,7 +59,7 @@ class AnalyticsService:
         fig = px.histogram(
             df, 
             x="CGPA", 
-            color="branch", 
+            color="Branch",  # Fixed case-sensitivity to match column name "Branch"
             nbins=20,
             title="Graduate Talent Pool CGPA Distribution by Branch",
             template="plotly_white", 
