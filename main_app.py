@@ -42,7 +42,7 @@ logo_path = "assets/PragyanAI_Transperent.png"
 if os.path.exists(logo_path):
     st.sidebar.image(logo_path, use_container_width=True)
 else:
-    st.sidebar.title(" PragyanAI Hub")
+    st.sidebar.title("🚀 PragyanAI Hub")
 
 st.sidebar.markdown("---")
 
@@ -53,20 +53,20 @@ session.close()
 
 # 7. Main Navigation & Workspace Enforcement Based on Logged-in User Role
 st.sidebar.markdown("---")
-st.sidebar.markdown("###  Role-Based Workspace")
+st.sidebar.markdown("### 🧭 Role-Based Workspace")
 
 if not active_role:
     st.markdown("""
-        ##  Welcome to the PragyanAI College Intelligence Platform
+        ## 🚀 Welcome to the PragyanAI College Intelligence Platform
         
         **Grow with Gyan** — Empowering educational institutions, students, recruiters, and academic partners with advanced **Groq, LangGraph, and ChromaDB Agentic RAG** technology.
         
-        👉 **Please log in or create an account using the sidebar to unlock your customized workspace:**
-        -  **Student / Parent (Aspirant) Desk:** Explore cutoff ranks, placement metrics, and ask the AI Assistant.
-        -  **Engineering College Management:** Manage intake, add students, and track deep analytics.
-        -  **Corporate Recruiter Hub:** Benchmark campuses, review verified talent stacks, and post drives.
-        -  **High School / Partner Portal:** Request K-12 AI/Robotics workshops and view articulation programs.
-        -  **System Administrator:** Oversee complete multi-tenant governance and database entities.
+        👉 **Please log in or create an account using the sidebar test credentials to unlock your customized workspace:**
+        - 🎓 **Student / Parent (Aspirant) Desk:** Explore cutoff ranks, placement metrics, and ask the AI Assistant.
+        - 🏛️ **Engineering College Management:** Manage intake, add students, and track deep analytics.
+        - 💼 **Corporate Recruiter Hub:** Benchmark campuses, review verified talent stacks, and post drives.
+        - 🏫 **High School / Partner Portal:** Request K-12 AI/Robotics workshops and view articulation programs.
+        - ⚙️ **System Administrator:** Oversee complete multi-tenant governance and database entities.
     """)
     st.stop()
 
@@ -93,7 +93,7 @@ elif active_role == "admin":
 navigation_choice = st.sidebar.radio("Select Authorized Workspace", allowed_views)
 
 st.sidebar.markdown("---")
-st.sidebar.markdown("###  PragyanAI Ecosystem")
+st.sidebar.markdown("### 📌 PragyanAI Ecosystem")
 st.sidebar.caption("v4.5.0 Enterprise | Powered by Groq, LangGraph & ChromaDB")
 
 # 8. Route to Respective View Module Based on Authorized Selection
