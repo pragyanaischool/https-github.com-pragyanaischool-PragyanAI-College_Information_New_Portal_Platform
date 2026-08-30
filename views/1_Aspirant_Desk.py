@@ -126,21 +126,106 @@ def render_aspirant_desk():
     session = SessionLocal()
     try:
         # -------------------------------------------------------------------------
-        # TAB 1: Step 1 - Multi-Test Score & Rank Profiler
+        # TAB 1: Step 1 - Multi-Test Score & Rank Profiler (Enhanced)
         # -------------------------------------------------------------------------
         with tab_step1:
             st.session_state.aspirant_journey_step = 1
             
-            st.markdown("### 📝 Multi-Test Score & Rank Profiler")
-            st.markdown("Enter your entrance examination scores below to initialize your personalized counseling profile.")
-            
-            col_sc1, col_sc2 = st.columns(2)
-            with col_sc1:
-                kcet_rank = st.number_input("KCET Rank", min_value=1, max_value=200000, value=2500)
-                comedk_rank = st.number_input("COMEDK Rank", min_value=1, max_value=100000, value=1500)
-            with col_sc2:
-                jee_percentile = st.number_input("JEE Main Percentile", min_value=0.0, max_value=100.0, value=94.5)
-                boards_pct = st.number_input("PUC / 12th Board Aggregate (%)", min_value=0.0, max_value=100.0, value=92.0)
+            st.markdown("### 📝 Step 1: Candidate Multi-Test Profiler & Admission Preferences")
+            st.markdown("Provide your entrance scores and target criteria below. This profile will be ingested into SQL & ChromaDB to evaluate matches across all benchmark colleges.")
+
+            with st.form("step1_profiler_enhanced_form"):
+                st.markdown("#### 🎓 1. Entrance Test Scores & Academic Credentials")
+                col_s1, col_s2, col_s3 = st.columns(3)
+                
+                with col_s1:
+                    kcet_rank = st.number_input("KCET Engineering Rank:", min_value=1, max_value=200000, value=2500)
+                    kcet_pcm = st.number_input("KCET PCM Marks (/180):", min_value=0.0, max_value=180.0, value=145.0)
+                    comedk_rank = st.number_input("COMEDK UGET Rank:", min_value=1, max_value=100000, value=1500)
+                    
+                with col_s2:
+                    comedk_marks = st.number_input("COMEDK Marks (/180):", min_value=0.0, max_value=180.0, value=130.0)
+                    jee_percentile = st.number_input("JEE Main Percentile (NTA):", min_value=0.0, max_value=100.0, value=94.5)
+                    pessat_rank = st.number_input("PESSAT / Institutional Rank:", min_value=1, max_value=50000, value=500)
+                    
+                with col_s3:
+                    boards_pct = st.number_input("12th / PUC PCM Aggregate (%):", min_value=0.0, max_value=100.0, value=92.0)
+                    candidate_name = st.text_input("Candidate Full Name:", value="Rahul Sharma")
+                    candidate_email = st.text_input("Candidate Email:", value="aspirant@pragyanai.com")
+
+                preferred_branch = st.selectbox(
+                    "Preferred Branch:",
+                    ["Computer Science & Engineering (CSE)", "Artificial Intelligence & Machine Learning (AI-ML)", "Information Science (ISE)", "Electronics & Communication (ECE)", "Mechanical Engineering (MECH)"]
+                )
+
+                st.markdown("---")
+                st.markdown("#### 🏛️ 2. Institutional Type, City & Seat Quota Pathway")
+                col_i1, col_i2 = st.columns(2)
+                
+                with col_i1:
+                    preferred_city = st.multiselect(
+                        "Preferred Location / City:",
+                        ["Bengaluru", "Mysuru", "Mangaluru", "Hubballi-Dharwad", "Tumakuru"],
+                        default=["Bengaluru"]
+                    )
+                    college_affiliation = st.selectbox(
+                        "College Affiliation Type:",
+                        ["Autonomous Private University", "VTU Affiliated Autonomous Institution", "Government Engineering College", "Deemed University"]
+                    )
+                    
+                with col_i2:
+                    admission_quota = st.selectbox(
+                        "Admission Quota Pathway:",
+                        ["KCET Merit Quota", "COMEDK Merit Quota", "Management Quota (Direct Seat Lock)", "Institutional / NRI Quota"]
+                    )
+                    reservation_category = st.selectbox(
+                        "Reservation Quota / Category:",
+                        ["General Merit (GM)", "OBC / Category-1 / 2A / 2B", "SC / ST Quota", "Defense / Kannada Medium / Rural"]
+                    )
+
+                st.markdown("---")
+                st.markdown("#### 💰 3. Annual Fee Budget & Placement Salary Target (₹ Lakhs)")
+                col_b1, col_b2, col_b3 = st.columns(3)
+                
+                with col_b1:
+                    max_tuition_budget = st.slider("Maximum Annual Tuition Budget (₹ Lakhs/yr):", min_value=1.0, max_value=25.0, value=12.0, step=0.5)
+                with col_b2:
+                    min_median_ctc = st.slider("Minimum Acceptable Median CTC (₹ LPA):", min_value=4.0, max_value=25.0, value=8.5, step=0.5)
+                with col_b3:
+                    target_dream_ctc = st.slider("Target Dream Placement Package (₹ LPA):", min_value=15.0, max_value=70.0, value=35.0, step=1.0)
+
+                st.markdown("---")
+                submitted_profile = st.form_submit_button("💾 Save Profile to SQL & Ingest into ChromaDB", type="primary", use_container_width=True)
+
+                if submitted_profile:
+                    try:
+                        lead = AdmissionLead(
+                            student_name=candidate_name,
+                            email=candidate_email,
+                            phone="9845012345",
+                            target_branch=preferred_branch,
+                            entrance_exam="KCET / COMEDK / JEE",
+                            score_rank=int(kcet_rank),
+                            intent_score=float(min_median_ctc)
+                        )
+                        session.add(lead)
+                        session.commit()
+
+                        vector_service = VectorStoreService()
+                        profile_summary = (
+                            f"Candidate: {candidate_name}, KCET Rank: {kcet_rank}, COMEDK Rank: {comedk_rank}, "
+                            f"JEE Percentile: {jee_percentile}, Branch: {preferred_branch}, Quota: {admission_quota}, "
+                            f"Budget: {max_tuition_budget}LPA, Target CTC: {target_dream_ctc}LPA, Location: {preferred_city}"
+                        )
+                        vector_service.add_document(
+                            doc_id=f"profile_{candidate_email}",
+                            text=profile_summary,
+                            metadata={"source": "candidate_profile", "user": candidate_email}
+                        )
+
+                        st.success("🎉 Profile successfully saved to database & embedded into ChromaDB Vector Store! You can now proceed to Step 2.")
+                    except Exception as e:
+                        st.error(f"Error saving profile: {e}")
 
             # Optional Scorecard OCR / Text Extraction Card
             with st.expander("📄 Or upload your KCET / COMEDK Scorecard PDF for instant auto-read:", expanded=False):
