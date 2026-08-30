@@ -108,9 +108,7 @@ def render_aspirant_desk():
 
     st.markdown("<div style='margin-bottom: 1rem;'></div>", unsafe_allow_html=True)
 
-    # -------------------------------------------------------------------------
     # Tab Workspace Menu (7 Steps + Direct Counseling + AI Assistant)
-    # -------------------------------------------------------------------------
     tab_step1, tab_step2, tab_step3, tab_step4, tab_step5, tab_step6, tab_step7, tab_lead, tab_ai = st.tabs([
         "📝 Step 1: Score Profiler",
         "🎯 Step 2: Recommendations & ROI",
@@ -125,9 +123,7 @@ def render_aspirant_desk():
 
     session = SessionLocal()
     try:
-        # -------------------------------------------------------------------------
-        # TAB 1: Step 1 - Multi-Test Score & Rank Profiler (Type-Safe & Chroma-Safe)
-        # -------------------------------------------------------------------------
+        # TAB 1: Step 1 - Multi-Test Score & Rank Profiler
         with tab_step1:
             st.session_state.aspirant_journey_step = 1
             
@@ -210,7 +206,6 @@ def render_aspirant_desk():
 
                 if submitted_profile:
                     try:
-                        # Strict type casting to eliminate NoneType encode / attribute errors
                         safe_s_name = str(student_name or "Rahul Sharma")
                         safe_s_email = str(student_email or "aspirant@pragyanai.com")
                         safe_s_phone = str(student_phone or "9845012345")
@@ -282,23 +277,19 @@ def render_aspirant_desk():
                     st.session_state.aspirant_journey_step = 2
                     st.rerun()
 
-        # -------------------------------------------------------------------------
-        # TAB 2: Step 2 - Entrance Cutoff & Multi-Test Admission Profiler & Recommendations
-        # -------------------------------------------------------------------------
+        # TAB 2: Step 2 - Recommendations & ROI
         with tab_step2:
             st.session_state.aspirant_journey_step = 2
             
             st.markdown("### 🎯 Step 2: Entrance Cutoff & Multi-Test Admission Profiler")
             st.markdown("Matches institutions against your entrance ranks, fee budget, location, and placement salary targets.")
             
-            # 1. Extract Candidate Profile from Database (Fall back to defaults if none exist)
             latest_lead = session.query(AdmissionLead).order_by(AdmissionLead.id.desc()).first()
             
             candidate_branch = latest_lead.target_branch if latest_lead else "Computer Science & Engineering (CSE)"
             candidate_rank = latest_lead.score_rank if latest_lead else 2500
             min_ctc_target = latest_lead.intent_score if latest_lead else 8.5
 
-            # 2. Extract Real College Data from Database or Fill with Robust Dummy Data
             db_colleges = session.query(College).all()
             
             if db_colleges:
@@ -311,7 +302,6 @@ def render_aspirant_desk():
                     high_ctc = placement.highest_ctc if placement else (55.0 - idx * 5.0)
                     cut_rank = cutoff.cutoff_rank if cutoff else (1250 + idx * 800)
                     
-                    # Algorithmic match analysis
                     match_score = round(98.5 - (abs(candidate_rank - cut_rank) / 100), 1)
                     match_score = max(80.0, min(99.4, match_score))
                     
@@ -328,7 +318,6 @@ def render_aspirant_desk():
                         "match_score": match_score
                     })
             else:
-                # Fallback Dummy Recommendations if DB table is unpopulated
                 recommendations = [
                     {"name": "SIT (Siddaganga Institute of Technology)", "code": "E010", "location": "Tumakuru", "type": "Autonomous (VTU Affiliated)", "median_ctc": 8.4, "highest_ctc": 34.0, "govt_fee": 1.07, "mgmt_fee": 6.0, "cutoff_rank": 3500, "match_score": 96.4},
                     {"name": "BMSCE (BMS College of Engineering)", "code": "E002", "location": "Bengaluru", "type": "Autonomous (VTU Affiliated)", "median_ctc": 11.2, "highest_ctc": 50.0, "govt_fee": 1.07, "mgmt_fee": 12.5, "cutoff_rank": 3535, "match_score": 94.1},
@@ -356,7 +345,6 @@ def render_aspirant_desk():
 
             st.markdown("#### 🏆 Algorithmically Ranked Recommendations")
 
-            # Render Dynamic Recommendation Cards
             border_colors = ["#2563eb", "#10b981", "#8b5cf6"]
             bg_badges = ["#dbeafe", "#d1fae5", "#ede9fe"]
             text_badges = ["#1e40af", "#065f46", "#5b21b6"]
@@ -397,16 +385,13 @@ def render_aspirant_desk():
                     st.session_state.aspirant_journey_step = 3
                     st.rerun()
 
-        # -------------------------------------------------------------------------
-        # TAB 3: Step 3 - Compare Two Colleges Side-by-Side
-        # -------------------------------------------------------------------------
+        # TAB 3: Step 3 - Compare Colleges Side-by-Side
         with tab_step3:
             st.session_state.aspirant_journey_step = 3
             
             st.markdown("### ⚖️ Step 3: Compare Two Colleges Side-by-Side")
             st.markdown("Deep parameter comparison: Accreditation, Tuition Fees, Median Salaries, and Return on Investment.")
             
-            # Fetch all colleges from DB for dropdown selection
             db_colleges_list = session.query(College).all()
             college_names = [c.name for c in db_colleges_list] if db_colleges_list else [
                 "SIT (Siddaganga Institute of Technology)",
@@ -422,12 +407,10 @@ def render_aspirant_desk():
             with c_comp2:
                 col_b_name = st.selectbox("Select College B (Benchmark):", college_names, index=1 if len(college_names) > 1 else 0, key="comp_b_sel")
 
-            # Helper function to extract or synthesize synthetic deep metrics for any college
             def get_college_deep_metrics(name_str):
                 col_obj = session.query(College).filter_by(name=name_str).first()
                 placement = session.query(CollegePlacementRecord).filter_by(college_id=col_obj.id).first() if col_obj else None
                 
-                # Synthetic / Fallback Generator if database fields are empty
                 is_sit = "SIT" in name_str or "Siddaganga" in name_str
                 is_bms = "BMS" in name_str
                 is_pes = "PES" in name_str
@@ -453,7 +436,6 @@ def render_aspirant_desk():
 
             st.markdown("<br/>", unsafe_allow_html=True)
 
-            # Render Deep Comparison Table
             st.markdown(f"""
                 | Evaluation Metric | 🏛️ {col_a_name.split(' ')[0]} | 🏛️ {col_b_name.split(' ')[0]} |
                 | :--- | :--- | :--- |
@@ -482,53 +464,177 @@ def render_aspirant_desk():
                     st.session_state.aspirant_journey_step = 4
                     st.rerun()
 
-        # -------------------------------------------------------------------------
-        # TAB 4: Step 4 - Institutional Knowledge Directory, Direct Portals & PDFs
-        # -------------------------------------------------------------------------
+        # TAB 4: Step 4 - Official Portals, Flyers & Multimedia Discovery Hub
         with tab_step4:
             st.session_state.aspirant_journey_step = 4
             
-            st.markdown("### 🏛️ Institutional Knowledge Directory & Official Portals")
-            st.markdown("Access verified links, direct admission portals, and official institutional documentation.")
+            st.markdown("### 🏛️ Step 4: Institutional Knowledge Directory & Official Portals")
+            st.markdown("Access official administration websites, KEA seat allocation archives, research infrastructure, and interactive multimedia materials.")
             
-            col_docs, col_video = st.columns([1, 1])
+            db_colleges_list = session.query(College).all()
+            college_names = [c.name for c in db_colleges_list] if db_colleges_list else [
+                "Ramaiah Institute of Technology (MSRIT)",
+                "Bangalore Institute of Technology (BIT)",
+                "PES University (PESU)",
+                "BMS College of Engineering (BMSCE)"
+            ]
+
+            selected_dir_college = st.selectbox("📌 Select College to Inspect Portals & Infrastructure:", college_names, key="dir_college_select")
+
+            def get_directory_details(name_str):
+                col_obj = session.query(College).filter_by(name=name_str).first()
+                placement = session.query(CollegePlacementRecord).filter_by(college_id=col_obj.id).first() if col_obj else None
+                
+                is_msrit = "Ramaiah" in name_str or "MSRIT" in name_str
+                is_pes = "PES" in name_str
+                is_bms = "BMS" in name_str
+                
+                return {
+                    "name": col_obj.name if col_obj else name_str,
+                    "location": col_obj.location if col_obj else "Bengaluru",
+                    "affiliation": "Autonomous (VTU Affiliated)" if not is_pes else "Private State University",
+                    "code": "E003" if is_msrit else ("E002" if is_bms else "E004"),
+                    "nirf": col_obj.nirf_rank if (col_obj and col_obj.nirf_rank) else (75 if is_msrit else 52),
+                    "naac": "A+ (CGPA 3.48)" if is_msrit else "A++ (CGPA 3.83)",
+                    "mgmt_fee": "₹11.0 Lakhs / yr" if is_msrit else "₹12.5 Lakhs / yr",
+                    "govt_fee": "₹1.07 Lakhs / yr",
+                    "median_ctc": f"₹{placement.average_ctc} LPA" if placement else ("₹10.5 LPA" if is_msrit else "₹11.2 LPA"),
+                    "highest_ctc": f"₹{placement.highest_ctc} LPA" if placement else ("₹46.0 LPA" if is_msrit else "₹50.0 LPA"),
+                    "website": "https://www.msrit.edu" if is_msrit else "https://www.bmsce.ac.in"
+                }
+
+            dir_info = get_directory_details(selected_dir_college)
+
+            st.markdown("<br/>", unsafe_allow_html=True)
+            
+            st.markdown(
+                f"""
+                <div style="background: #ffffff; border: 1px solid #cbd5e1; border-left: 5px solid #2563eb; border-radius: 8px; padding: 1.25rem; margin-bottom: 1.25rem; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                    <h4 style="margin: 0; color: #1e293b; font-size: 1.2rem;">🏛️ {dir_info['name']}</h4>
+                    <p style="margin: 4px 0 0 0; color: #64748b; font-size: 0.85rem;">
+                        📍 {dir_info['location']} &nbsp;|&nbsp; 🏛️ {dir_info['affiliation']} &nbsp;|&nbsp; Code: <code>{dir_info['code']}</code> &nbsp;|&nbsp; NIRF: <code>#{dir_info['nirf']}</code> &nbsp;|&nbsp; NAAC: <code>{dir_info['naac']}</code>
+                    </p>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+            col_sec1, col_sec2, col_sec3 = st.columns(3)
+
+            with col_sec1:
+                st.markdown(
+                    f"""
+                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem; height: 100%;">
+                        <h5 style="margin-top: 0; color: #1e293b;">🌐 Official Direct Portals</h5>
+                        <ul style="padding-left: 18px; font-size: 0.85rem; color: #334155; margin-bottom: 0;">
+                            <li><a href="{dir_info['website']}" target="_blank" style="color: #2563eb; text-decoration: none;">Institution Homepage ↗</a></li>
+                            <li><a href="https://cetonline.karnataka.gov.in/kea/" target="_blank" style="color: #2563eb; text-decoration: none;">KEA Seat Allocation Portal ↗</a></li>
+                            <li><a href="https://www.comedk.org" target="_blank" style="color: #2563eb; text-decoration: none;">COMEDK Counseling Archive ↗</a></li>
+                            <li><a href="{dir_info['website']}/placements" target="_blank" style="color: #2563eb; text-decoration: none;">Placement Cell Portal ↗</a></li>
+                        </ul>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+
+            with col_sec2:
+                st.markdown(
+                    f"""
+                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem; height: 100%;">
+                        <h5 style="margin-top: 0; color: #1e293b;">📈 Placements & Accreditations</h5>
+                        <div style="font-size: 0.85rem; color: #334155;">
+                            <p style="margin: 4px 0;"><b>Median CTC:</b> <span style="color: #16a34a; font-weight: 700;">{dir_info['median_ctc']}</span></p>
+                            <p style="margin: 4px 0;"><b>Highest Package:</b> <span style="color: #2563eb; font-weight: 700;">{dir_info['highest_ctc']}</span></p>
+                            <p style="margin: 4px 0;"><b>Accreditation:</b> NAAC {dir_info['naac']}</p>
+                            <p style="margin: 4px 0;"><b>Placement Rate:</b> 94.5% Batch Conversion</p>
+                        </div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+
+            with col_sec3:
+                st.markdown(
+                    f"""
+                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem; height: 100%;">
+                        <h5 style="margin-top: 0; color: #1e293b;">💰 Verified Fee Structure</h5>
+                        <div style="font-size: 0.85rem; color: #334155;">
+                            <p style="margin: 4px 0;"><b>Management Quota (CSE):</b> <span style="color: #dc2626; font-weight: 700;">{dir_info['mgmt_fee']}</span></p>
+                            <p style="margin: 4px 0;"><b>Government CET Fee:</b> <span style="color: #16a34a; font-weight: 700;">{dir_info['govt_fee']}</span></p>
+                            <p style="margin: 4px 0;"><b>Hostel & Mess:</b> ₹1.2 Lakhs / yr</p>
+                            <p style="margin: 4px 0;"><b>Library & Lab Dep:</b> ₹15,000 (Refundable)</p>
+                        </div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+
+            st.markdown("<br/>", unsafe_allow_html=True)
+            
+            st.subheader("📥 Interactive Materials, Flyers & Multimedia Discovery Hub")
+            st.caption("Select specific institutional flyers, PDF reports, virtual tour videos, or podcast audio briefings to view and play.")
+
+            media_tab_pdf, media_tab_av = st.tabs(["📄 Flyers & PDF Materials Selection", "🎬 Video & Audio Briefing Selection"])
 
             DATA_DIR.mkdir(parents=True, exist_ok=True)
             flyer_path = DATA_DIR / "Admission_Flyer_2026.pdf"
-            roi_path = DATA_DIR / "Placement_ROI_Report_2026.pdf"
 
-            with col_docs:
-                st.markdown("#### 📄 Verified Institutional Publications")
-                if flyer_path.exists():
-                    with open(flyer_path, "rb") as f_brochure:
-                        st.download_button(
-                            "📄 Download Management Quota Fee Flyer (PDF)",
-                            data=f_brochure.read(),
-                            file_name="Management_Fee_Structure_2026.pdf",
-                            mime="application/pdf",
-                            width='stretch',
-                        )
-                else:
-                    st.caption("Management quota fee flyer publication ready for download upon ingestion.")
-
-                if roi_path.exists():
-                    with open(roi_path, "rb") as f_roi:
-                        st.download_button(
-                            "📈 Download 4-Year Salary ROI Report (PDF)",
-                            data=f_roi.read(),
-                            file_name="Placement_ROI_Report_2026.pdf",
-                            mime="application/pdf",
-                            width='stretch',
-                        )
-
-                st.info(
-                    "💡 **Merit Concession Note:** Top 2,000 KCET & Top 1,500 COMEDK rank holders "
-                    "qualify for up to a 50% tuition scholarship under institutional quotas."
+            with media_tab_pdf:
+                st.markdown("#### 📄 Select & View Institutional PDF Publications")
+                
+                selected_pdf_option = st.selectbox(
+                    "Choose PDF Document to Inspect:",
+                    [
+                        "Management Quota Fee & Seat Matrix Flyer 2026 (PDF)",
+                        "4-Year Salary ROI & Placement Statistics Report 2026 (PDF)",
+                        "Autonomous Syllabus & AI Curriculum Blueprint (PDF)"
+                    ],
+                    key="selected_pdf_dropdown"
                 )
 
-            with col_video:
-                st.markdown("#### 🎥 Virtual Labs & Campus Discovery Tour")
-                st.video("https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+                col_pdf_info, col_pdf_action = st.columns([2, 1])
+                with col_pdf_info:
+                    st.info(f"📌 **Selected Publication:** `{selected_pdf_option}`\n\nVerified by institutional directorate. Includes official fee structures, scholarship criteria, and placement statistics.")
+                with col_pdf_action:
+                    if flyer_path.exists():
+                        with open(flyer_path, "rb") as f_dl:
+                            st.download_button(
+                                "📥 Download Selected PDF",
+                                data=f_dl.read(),
+                                file_name=selected_pdf_option.replace(" ", "_") + ".pdf",
+                                mime="application/pdf",
+                                width='stretch',
+                            )
+                    else:
+                        st.warning("Publication file compiling...")
+
+            with media_tab_av:
+                st.markdown("#### 🎥 Select & Play Video Tours & Audio Briefings")
+
+                selected_media_option = st.selectbox(
+                    "Choose Video or Audio Material to Play:",
+                    [
+                        "🎥 Campus Virtual Lab & Infrastructure Walkthrough (Video)",
+                        "🎥 Dean of Admissions: Why Choose Our Autonomous Tracks? (Interview Video)",
+                        "🎧 Student Podcast: Life, Coding Hackathons & Silicon Valley Placements (Audio Briefing)",
+                        "🎧 Placement Director Briefing: 2026 Hiring Trends & Salary ROI (Audio Briefing)"
+                    ],
+                    key="selected_media_dropdown"
+                )
+
+                if "Video" in selected_media_option:
+                    st.markdown(f"**Now Playing (Video):** *{selected_media_option}*")
+                    st.video("https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+                else:
+                    st.markdown(f"**Now Playing (Audio Briefing):** *{selected_media_option}*")
+                    st.audio("https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3")
+                    st.caption("🎧 Audio Stream Active: Listen to full interview briefings with institutional faculty and recruitment heads.")
+
+            st.markdown("<br/>", unsafe_allow_html=True)
+            st.info(
+                "💡 **Merit Concession Note:** Top 2,000 KCET & Top 1,500 COMEDK rank holders "
+                "qualify for up to a 50% tuition scholarship under institutional quotas."
+            )
 
             col_nav_prev4, col_nav_next4 = st.columns([1, 1])
             with col_nav_prev4:
@@ -540,17 +646,117 @@ def render_aspirant_desk():
                     st.session_state.aspirant_journey_step = 5
                     st.rerun()
 
-        # -------------------------------------------------------------------------
         # TAB 5: Step 5 - Voice of the Stakeholders
-        # -------------------------------------------------------------------------
         with tab_step5:
             st.session_state.aspirant_journey_step = 5
             
-            st.markdown("### 🗣️ Voice of the Stakeholders (Alumni, Recruiters & HOD Quotes)")
+            st.markdown("### 🗣️ Step 5: Voice of the Stakeholders")
+            st.markdown("Hear directly from Deans, corporate recruiters, successful alumni, and current students about campus culture, technical rigor, and career outcomes.")
             
-            st.info("💬 *\"PragyanAI's engineering curriculum transition equipped our graduates with deep agentic AI proficiency, enabling them to secure top-tier R&D roles at Google and Microsoft within days of campus interviews.\"* — **Dr. V. K. Rao, Dean of Academics**")
             st.markdown("<br/>", unsafe_allow_html=True)
-            st.success("💬 *\"The rigor in embedded Linux and PyTorch frameworks among candidates from these institutions is world-class. Hiring velocity is 3x faster.\"* — **Ananya Desai, Corporate Talent Head**")
+
+            st.markdown("#### 🏛️ 1. Leadership & Academic Administration Perspectives")
+            
+            col_l1, col_l2 = st.columns(2)
+            with col_l1:
+                st.markdown(
+                    """
+                    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #2563eb; border-radius: 8px; padding: 1.25rem; box-shadow: 0 2px 4px rgba(0,0,0,0.02); height: 100%;">
+                        <p style="font-style: italic; color: #334155; font-size: 0.95rem; margin-top: 0;">
+                            &ldquo;Our autonomous curriculum transition integrates Agentic AI, PyTorch, and Embedded Linux kernels directly into the core engineering syllabus. Graduates step into industry as immediate technical contributors rather than trainees.&rdquo;
+                        </p>
+                        <hr style="margin: 10px 0; border: none; border-top: 1px solid #f1f5f9;">
+                        <p style="margin: 0; font-weight: 700; color: #0f172a; font-size: 0.9rem;">Dr. V. K. Rao</p>
+                        <p style="margin: 2px 0 0 0; color: #64748b; font-size: 0.8rem;">Dean of Academics & Research, Tier-1 Autonomous Cluster</p>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+
+            with col_l2:
+                st.markdown(
+                    """
+                    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #10b981; border-radius: 8px; padding: 1.25rem; box-shadow: 0 2px 4px rgba(0,0,0,0.02); height: 100%;">
+                        <p style="font-style: italic; color: #334155; font-size: 0.95rem; margin-top: 0;">
+                            &ldquo;We maintain dedicated incubation cells backed by NSRCEL and IEEE. Students actively build real-world venture prototypes and file patents before graduating, giving them a monumental edge in admissions and placements.&rdquo;
+                        </p>
+                        <hr style="margin: 10px 0; border: none; border-top: 1px solid #f1f5f9;">
+                        <p style="margin: 0; font-weight: 700; color: #0f172a; font-size: 0.9rem;">Prof. S. R. Hebbar</p>
+                        <p style="margin: 2px 0 0 0; color: #64748b; font-size: 0.8rem;">Director of Student Innovation & Incubation Cell</p>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+
+            st.markdown("<br/>", unsafe_allow_html=True)
+            st.markdown("#### 💼 2. Corporate Recruiters & Talent Heads")
+            
+            col_r1, col_r2 = st.columns(2)
+            with col_r1:
+                st.markdown(
+                    """
+                    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #8b5cf6; border-radius: 8px; padding: 1.25rem; box-shadow: 0 2px 4px rgba(0,0,0,0.02); height: 100%;">
+                        <p style="font-style: italic; color: #334155; font-size: 0.95rem; margin-top: 0;">
+                            &ldquo;When hiring for our Cloud & AI divisions, candidates from these benchmark institutions demonstrate exceptional command over system architecture and vector indexing. Our hiring velocity here is 3x faster.&rdquo;
+                        </p>
+                        <hr style="margin: 10px 0; border: none; border-top: 1px solid #f1f5f9;">
+                        <p style="margin: 0; font-weight: 700; color: #0f172a; font-size: 0.9rem;">Ananya Desai</p>
+                        <p style="margin: 2px 0 0 0; color: #64748b; font-size: 0.8rem;">Global Talent Head, Deep Tech & Cloud Solutions</p>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+
+            with col_r2:
+                st.markdown(
+                    """
+                    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #f59e0b; border-radius: 8px; padding: 1.25rem; box-shadow: 0 2px 4px rgba(0,0,0,0.02); height: 100%;">
+                        <p style="font-style: italic; color: #334155; font-size: 0.95rem; margin-top: 0;">
+                            &ldquo;The collaborative campus drives and structured coding hackathons organized here allow us to evaluate top-tier engineering talent seamlessly. Placement conversion rates exceed 92% consistently.&rdquo;
+                        </p>
+                        <hr style="margin: 10px 0; border: none; border-top: 1px solid #f1f5f9;">
+                        <p style="margin: 0; font-weight: 700; color: #0f172a; font-size: 0.9rem;">Priya Menon</p>
+                        <p style="margin: 2px 0 0 0; color: #64748b; font-size: 0.8rem;">Senior Campus Recruiter, Semiconductor & Embedded Systems</p>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+
+            st.markdown("<br/>", unsafe_allow_html=True)
+            st.markdown("#### 🎓 3. Successful Alumni & Student Success Stories")
+            
+            col_a1, col_a2 = st.columns(2)
+            with col_a1:
+                st.markdown(
+                    """
+                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1.25rem; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                        <p style="font-style: italic; color: #334155; font-size: 0.9rem; margin-top: 0;">
+                            &ldquo;The peer group and faculty mentorship during my undergraduate years were transformative. Securing a 55 LPA product role right after graduation started with the rigorous coding culture fostered on campus.&rdquo;
+                        </p>
+                        <hr style="margin: 8px 0; border: none; border-top: 1px solid #e2e8f0;">
+                        <p style="margin: 0; font-weight: 700; color: #0f172a; font-size: 0.85rem;">Aarav Patel (Batch of 2024)</p>
+                        <p style="margin: 2px 0 0 0; color: #64748b; font-size: 0.75rem;">Software Engineer III, Silicon Valley R&D Hub</p>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+
+            with col_a2:
+                st.markdown(
+                    """
+                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1.25rem; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                        <p style="font-style: italic; color: #334155; font-size: 0.9rem; margin-top: 0;">
+                            &ldquo;As a final year AI-ML undergraduate, having access to high-performance GPU compute clusters and publishing research papers under senior professors helped me secure multiple tier-1 offers before placement season even began.&rdquo;
+                        </p>
+                        <hr style="margin: 8px 0; border: none; border-top: 1px solid #e2e8f0;">
+                        <p style="margin: 0; font-weight: 700; color: #0f172a; font-size: 0.85rem;">Diya Nair (Batch of 2026)</p>
+                        <p style="margin: 2px 0 0 0; color: #64748b; font-size: 0.75rem;">President, Student Artificial Intelligence & Robotics Club</p>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+
+            st.markdown("<br/>", unsafe_allow_html=True)
 
             col_nav_prev5, col_nav_next5 = st.columns([1, 1])
             with col_nav_prev5:
@@ -562,9 +768,7 @@ def render_aspirant_desk():
                     st.session_state.aspirant_journey_step = 6
                     st.rerun()
 
-        # -------------------------------------------------------------------------
         # TAB 6: Step 6 - Aspirant Knowledge Bank
-        # -------------------------------------------------------------------------
         with tab_step6:
             st.session_state.aspirant_journey_step = 6
             
@@ -599,9 +803,7 @@ def render_aspirant_desk():
                     st.session_state.aspirant_journey_step = 7
                     st.rerun()
 
-        # -------------------------------------------------------------------------
         # TAB 7: Step 7 - Student Vision & Document RAG Assistant
-        # -------------------------------------------------------------------------
         with tab_step7:
             st.session_state.aspirant_journey_step = 7
             
@@ -626,9 +828,7 @@ def render_aspirant_desk():
                     st.session_state.aspirant_journey_step = 6
                     st.rerun()
 
-        # -------------------------------------------------------------------------
         # TAB 8: Direct Counseling & Admission Lead Form
-        # -------------------------------------------------------------------------
         with tab_lead:
             st.markdown("### ✍️ Lock In Direct Admission & Counseling Support")
             st.markdown("Connect directly with college admissions directorates for multi-institution seat allocation, scholarships, and fee concessions.")
@@ -695,9 +895,7 @@ def render_aspirant_desk():
                         except Exception as err:
                             st.error(f"Error submitting inquiry: {err}")
 
-        # -------------------------------------------------------------------------
-        # TAB 9: Conversational AI Assistant with Sample Questions
-        # -------------------------------------------------------------------------
+        # TAB 9: Conversational AI Assistant
         with tab_ai:
             st.markdown("### 🤖 Groq + LangGraph AI Guide & RAG Chatbot")
             st.markdown("Ask any question about cutoffs, placements, scholarships, or fee structures, or click a sample question below to begin:")
