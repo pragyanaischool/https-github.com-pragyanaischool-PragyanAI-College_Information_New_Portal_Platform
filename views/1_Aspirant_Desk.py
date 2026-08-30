@@ -4,7 +4,7 @@ import streamlit as st
 
 from config.settings import DATA_DIR
 from database.session import SessionLocal
-from database.models import AdmissionLead
+from database.models import AdmissionLead, College, CollegePlacementRecord, Cutoff
 from services.analytics_service import AnalyticsService
 from services.rag_service import RAGService
 from services.vector_store_service import VectorStoreService
