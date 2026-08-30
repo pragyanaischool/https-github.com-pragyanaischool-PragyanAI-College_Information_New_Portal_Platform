@@ -3,7 +3,8 @@ import streamlit as st
 def load_custom_css():
     """
     Injects custom enterprise CSS styling into the Streamlit app session 
-    to guarantee high-contrast visible typography and polished card backgrounds.
+    to guarantee high-contrast visible typography, background styling, 
+    and clear visibility for file upload drop zones.
     """
     st.markdown("""
         <style>
@@ -21,6 +22,23 @@ def load_custom_css():
             color: #0f172a;
             font-family: 'Inter', sans-serif;
         }
+
+        /* Explicitly fix file uploader / drop box visibility */
+        [data-testid="stFileUploader"] {
+            background-color: #ffffff !important;
+            border: 2px dashed #cbd5e1 !important;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        }
+        
+        [data-testid="stFileUploader"] section {
+            background-color: #ffffff !important;
+        }
+
+        [data-testid="stFileUploader"] section div {
+            color: #334155 !important;
+        }
         
         /* Custom metric cards styling */
         div[data-testid="stMetric"] {
@@ -32,11 +50,11 @@ def load_custom_css():
         }
         
         div[data-testid="stMetric"] label {
-            color: #64748b !important; /* Muted label */
+            color: #64748b !important;
         }
 
         div[data-testid="stMetric"] div[data-testid="stMetricValue"] {
-            color: #0f172a !important; /* Bold value */
+            color: #0f172a !important;
             font-weight: 700 !important;
         }
         
